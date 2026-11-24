@@ -26,6 +26,34 @@ let activeSlide = 0;
 let slideshowPaused = reducedMotion.matches;
 let slideshowTimer;
 
+function setupScrollReveals() {
+  if (reducedMotion.matches || !("IntersectionObserver" in window)) return;
+
+  const revealTargets = Array.from(document.querySelectorAll(
+    "main section:not(.hero) .eyebrow, main section:not(.hero) h2, main section:not(.hero) h3, " +
+    "main section:not(.hero) p, main section:not(.hero) li, main section:not(.hero) blockquote, " +
+    "main section:not(.hero) .commitment-list span, main section:not(.hero) .text-link, " +
+    ".values-grid strong"
+  ));
+
+  if (!revealTargets.length) return;
+
+  const observer = new IntersectionObserver((entries, currentObserver) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add("is-visible");
+      currentObserver.unobserve(entry.target);
+    });
+  }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+
+  document.documentElement.classList.add("scroll-reveal-ready");
+  revealTargets.forEach((element, index) => {
+    element.dataset.reveal = "";
+    element.style.setProperty("--reveal-delay", `${(index % 5) * 70}ms`);
+    observer.observe(element);
+  });
+}
+
 function showSlide(index) {
   slides[activeSlide].classList.remove("is-active");
   slideDots[activeSlide].classList.remove("is-active");
@@ -63,6 +91,7 @@ slideDots.forEach((dot, index) => {
 slideToggle.addEventListener("click", () => {
   slideshowPaused = !slideshowPaused;
   updateSlideshowControl();
+  setupScrollReveals();
 });
 
 document.addEventListener("visibilitychange", startSlideshow);
